@@ -7,7 +7,7 @@ export type IHistory = IHistoryEntry[];
 
 
 
-export async function getNextStory(history:IHistory, text: string) {
+export async function getNextStory(history:IHistory, text: string, story_id: string) {
   const URI = 'https://us-west1-gen-rpg.cloudfunctions.net/storyteller';
 
   return fetch(URI, {
@@ -15,13 +15,13 @@ export async function getNextStory(history:IHistory, text: string) {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ history: history, text:text }),
+    body: JSON.stringify({ history: history, text:text, story_id:story_id }),
   }).then((response) => response.json()).then((data) => {
     return data
   });
 }
 
-export async function setStory(text: string) {
+export async function setStory(text: string, story_id: string) {
   const URI = 'https://us-west1-gen-rpg.cloudfunctions.net/storyteller-1';
 
   fetch(URI, {
@@ -29,7 +29,7 @@ export async function setStory(text: string) {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ text:text }),
+    body: JSON.stringify({ text:text, story_id:story_id }),
   }).then((response) => response.json()).then((data) => {
     return data
   });

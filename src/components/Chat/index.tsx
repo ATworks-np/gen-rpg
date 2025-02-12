@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Box } from "@mui/material";
 import { IMessage, IPromptMessage } from "@/models/interfaces/message";
 import ChatInput from "@/components/ChatInput";
@@ -8,6 +8,7 @@ import { model_editor, model_timestamper } from "@/libs/firebase";
 import ChatMessage from "@/components/ChatMessage";
 import {getNextStory, setStory} from "@/actions/api";
 import LoadingModal from "@/components/LoadingModal";
+import { getChatHistory, setChat} from "@/actions/chat_history";
 
 function convertIMessageArrayToChatEntry(messages: IMessage[]): IPromptMessage[] {
   return messages.map(message => {
@@ -18,17 +19,21 @@ function convertIMessageArrayToChatEntry(messages: IMessage[]): IPromptMessage[]
   });
 }
 
-const ChatApp: React.FC = () => {
+interface IChatProps {
+  story_id: string;
+}
+
+const Chat: React.FC<IChatProps> = ({story_id}: IChatProps) => {
   const [messages, setMessages] = useState<IMessage[]>([]);
   const messageIdRef = useRef(0);
   const [loading, setLoading] = useState(false);
   const [elapsedMinutes, setElapsedMinutes] = useState<number>(0);
 
   // メッセージ追加のヘルパー関数
-  const addMessage = (sender: "user" | "model" | 'system', text: string): number => {
+  const addMessage = (role: "user" | "model" | 'system', text: string): number => {
     const newMessage: IMessage = {
       id: messageIdRef.current++,
-      role: sender,
+      role: role,
       text: text,
     };
     setMessages((prev) => [...prev, newMessage]);
@@ -51,8 +56,9 @@ const ChatApp: React.FC = () => {
   const handleSend = async (text: string) => {
     setLoading(true);
     addMessage("user", text);
+    await setChat(story_id, {role: "user", text: text});
 
-    const nextStory = await getNextStory(convertIMessageArrayToChatEntry(messages), text);
+    const nextStory = await getNextStory(convertIMessageArrayToChatEntry(messages), text, story_id);
     const storyAndInfo = getMessageForEditor(nextStory);
     console.log(nextStory);
 
@@ -70,7 +76,8 @@ const ChatApp: React.FC = () => {
         )
       );
     }
-    await setStory(finalBotText);
+    await setStory(finalBotText, story_id);
+    await setChat(story_id, {role: "model", text: finalBotText});
     const timeResult = await model_timestamper.generateContent(finalBotText);
     const diffStr = timeResult.response.text();
     const diffMinutes = parseElapsedTime(diffStr);
@@ -98,12 +105,15 @@ const ChatApp: React.FC = () => {
     // }
   };
 
-  // useEffect(() => {
-  //   (async () => {
-  //     await handleSend('それでは、始まりの場所を設定し物語を始めてください');
-  //   })();
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, []);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const history = await getChatHistory(story_id);
+      setMessages(history);
+      setLoading(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function parseElapsedTime(timeStr: string): number {
     // 例: "01-05:30" => 1日、5時間、30分
@@ -146,4 +156,4 @@ const ChatApp: React.FC = () => {
   );
 };
 
-export default ChatApp;
+export default Chat;

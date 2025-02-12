@@ -20,5 +20,9 @@
       "npm --prefix \"$PROJECT_DIR\" run build"
     ],
     "runtime": "nodejs22"
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   }
 }

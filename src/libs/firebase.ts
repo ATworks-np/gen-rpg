@@ -1,5 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
+import { getFirestore } from 'firebase/firestore'
 import { getVertexAI, getGenerativeModel, HarmCategory, HarmBlockThreshold, SafetySetting } from "firebase/vertexai";
 import { system_prompts } from "@/libs/prompt";
 
@@ -56,5 +57,6 @@ const model_timestamper = getGenerativeModel(
     systemInstruction: system_prompts["timestamper"],
   });
 
+const db = getFirestore()
 
-export { app, model_editor, model_timestamper };
+export { app, db, model_editor, model_timestamper };
